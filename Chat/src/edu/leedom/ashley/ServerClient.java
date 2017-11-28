@@ -5,10 +5,10 @@ public class ServerClient {
 	public String name;
 	public InetAddress address;
 	public int port;
-	private String ID;
+	private int ID;
 	public int attempt = 0;
 	
-	public ServerClient( String name, InetAddress address, int port, String ID ) 
+	public ServerClient( String name, InetAddress address, int port, int ID ) 
 	{
 		this.ID = ID;
 		this.address = address;
@@ -16,7 +16,7 @@ public class ServerClient {
 		this.name = name;
 	}
 	
-	public String getID()
+	public int getID()
 	{
 		return ID;
 	}
