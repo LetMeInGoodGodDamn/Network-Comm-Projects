@@ -16,26 +16,20 @@ import javax.swing.border.EmptyBorder;
 public class ClientWindow extends JFrame implements Runnable {
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-
-	private String name, address;
-	private int port;
 	private JTextField txtMessage;
 	private JTextArea txtrHistory;
 
-	private DatagramSocket socket;
-	private InetAddress ip;
-	private String ID = null;
-	private Thread send, run, listen;
-	private boolean running = false;
+	private Client client;
 
+	private boolean running = false;
+	private Thread listen, run;
+	
 	/**
 	 * Create the frame.
 	 */
 	public ClientWindow(String name, String address, int port) {
-		this.name = name;
-		this.address = address;
-		this.port = port;
-		boolean connect = openConnection(address);
+		client = new Client( name, address, port );
+		boolean connect = client.openConnection(address);
 
 		if (!connect) {
 			System.err.println("Connection failed!");
@@ -44,14 +38,37 @@ public class ClientWindow extends JFrame implements Runnable {
 		}
 
 		createWindow();
-		running = true;
-		run = new Thread( "Running Thread" );
-		run.start();
 		String connection = "/c/" + name;
-		send(connection.getBytes());
+		client.send(connection.getBytes());
+		running = true;
+		run = new Thread( this, "Running" );
+		run.start();
+	}
+
+	public void listen() {
+		listen = new Thread("Listen") {
+			public void run() {
+				while (running) {
+					String message = client.receive();
+
+					if (message.startsWith("/c/")) {
+						client.setID( Integer.parseInt( message.split( "/c/|/e/")[1]));
+					} else if (message.startsWith("/m/")) {
+						String text = message.split( "/m/|/e/")[1];
+						console( text );
+					}
+				}
+			}
+		};
+		listen.start();
+	}
+
+	public void run() {
+		listen();
 	}
 
 	// more GUI shite
+	// dont go passed this line
 	private void createWindow() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -125,13 +142,13 @@ public class ClientWindow extends JFrame implements Runnable {
 	}
 
 	// BEGINNING OF NETWORKING SHITE
+	// IN SMALL TERMS. ACTUALLY JUST SENDING/CONSOLE SHITE
 	private void send(String message) {
 		if (message.equals(""))
 			return;
 
-		console(name + ": " + message);
-		message = "/m/" + message;
-		send(message.getBytes());
+		message = "/m/" + client.getName() + ": " + message;
+		client.send(message.getBytes());
 		txtMessage.setText("");
 	}
 
@@ -139,75 +156,4 @@ public class ClientWindow extends JFrame implements Runnable {
 		txtrHistory.append(message + "\n\r");
 		txtrHistory.setCaretPosition(txtrHistory.getDocument().getLength());
 	}
-
-	// receive data packets yo
-	private String receive() {
-		byte[] data = new byte[1024];
-		DatagramPacket packet = new DatagramPacket(data, data.length);
-
-		try {
-			socket.receive(packet);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		String message = new String(packet.getData());	
-		console(message);
-		return message;
-	}
-
-	public void listen() {
-		listen = new Thread( "Listen" ) {
-			public void run() {
-				while (running) {
-					console("in listen going to receive");
-					String message = receive();
-
-					if (message.startsWith("/c/")) {
-						String id = message.split( "/c/|/e/")[1];
-						ID = id;
-						console( "Successfully connected to server." );
-					}
-					else if( message.startsWith( "/m/" ) ) 
-					{
-						//haven't done this shite yet
-						console( message.substring( 3, message.length() ));
-					}
-				}
-			}
-		};
-		listen.start();
-	}
-
-	public void run()
-	{
-		console("fuck you.");
-		listen();
-	}
-	
-	private void send(final byte[] data) {
-		send = new Thread("Send") {
-			public void run() {
-				DatagramPacket packet = new DatagramPacket(data, data.length, ip, port);
-				try {
-					socket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		send.start();
-	}
-
-	private boolean openConnection(String address) {
-		try {
-			socket = new DatagramSocket();
-			ip = InetAddress.getByName(address);
-		} catch (UnknownHostException | SocketException e) {
-			e.printStackTrace();
-			return false;
-		}
-
-		return true;
-	}
-
 }

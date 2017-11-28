@@ -8,7 +8,7 @@ public class Server implements Runnable {
 	private List<ServerClient> clients = new ArrayList<ServerClient>();
 	private int port;
 	private DatagramSocket socket;
-	private Thread run, manage, send, receive;
+	private Thread run, send, receive;
 	private boolean running = false;
 	
 	public Server( int port )
@@ -29,24 +29,7 @@ public class Server implements Runnable {
 	public void run () 
 	{
 		running = true;
-		manageClients();
 		receive();
-	}
-	
-	private void manageClients() 
-	{
-		manage = new Thread( "Manage" ) {
-			public void run()
-			{
-				while( running )
-				{
-					//Managing
-					
-				}
-			}
-		};
-		manage.start();
-		
 	}
 	
 	private void receive()
@@ -73,32 +56,36 @@ public class Server implements Runnable {
 		String data = new String( packet.getData() );
 		if( data.startsWith( "/c/" ) )
 		{
-			System.out.println( "We are in Server side /c/ " );
-			UUID id = UUID.randomUUID();
+			int id = UniqueIdentifier.getIdentifier();
 			clients.add( new ServerClient( data.substring( 3, data.length() ), 
 									       packet.getAddress(), packet.getPort(), 
-									       id.toString() ) );
+									       id ) );
 			//verify connection
-			String id2 = "/c/" + id;
-			send( id2, packet.getAddress(), packet.getPort() );
+			String ID = "/c/" + id;
+			send( ID, packet.getAddress(), packet.getPort() );
 		}
 		else if ( data.startsWith( "/m/" ) )
 		{
 			sendToAll(data);
 			System.out.println( data );
 		}
+		else
+		{
+			System.out.println( data );
+		}
 	}
 	
+	//initially called. It appends the ending character to any given message
+	//then it calls the actual send method that interacts with clients
 	private void send( String message, InetAddress address, int port )
 	{
 		message += "/e/";
 		send( message.getBytes(), address, port );
 	}
 	
+	//send to all will send client messages to other clients
 	private void sendToAll( String message ) 
 	{
-		System.out.println( clients.size() );
-
 		for( int i = 0; i < clients.size(); i++ )
 		{
 			ServerClient client = clients.get(i);
@@ -106,6 +93,7 @@ public class Server implements Runnable {
 		}
 	}
 	
+	//wraps the message up in a packet and sends it out
 	private void send( final byte[] data, final InetAddress address, final int port )
 	{
 		send = new Thread( "Send" ) {
