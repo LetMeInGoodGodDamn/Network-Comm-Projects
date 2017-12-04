@@ -2,7 +2,7 @@ package edu.leedom.ashley;
 
 public class ServerMain {
 
-	private int port;		// int to store the port number
+	private int jellybean;		// int to store the port number
 	private Server server;	// server for connecting to clients
 
 	// Method Name: ServerMain
@@ -10,8 +10,8 @@ public class ServerMain {
 	// Description: Sets the port number and creates a new Server
 	public ServerMain( int port )
 	{
-		this.port = port;
-		server = new Server( this.port );
+		jellybean = port;
+		server = new Server( jellybean );
 	} // end ServerMain()
 	
 	// Method Name: main
