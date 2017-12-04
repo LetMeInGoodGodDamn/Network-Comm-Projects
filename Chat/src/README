@@ -1,0 +1,8 @@
+NOTE: 
+
+Group Members: Elisabeth H, Ashley L, and Justin R.
+
+HOW TO USE:
+
+1) Run ServerMain to start up the Chat Server, supply a port number in the command line arguments
+2) Run Login for each Client and supply a username, port number, and the port number you assigned to the server.
